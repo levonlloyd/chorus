@@ -171,13 +171,29 @@ def connect(ctx):
         return
 
     workspace_path = os.path.join(repo_dir, workspace_name)
+    git_repo_root = os.path.join(workspace_path, repo_name)
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     layout_path = os.path.join(project_root, "zellij", "layout.kdl")
 
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
     os.chdir(workspace_path)
-    os.system(f"CHORUS_COMMAND='{agent_name}' zellij --layout {layout_path}")
+    
+    # Create a temporary layout file with the git repo root substituted
+    import tempfile
+    with open(layout_path, 'r') as f:
+        layout_content = f.read()
+    
+    layout_content = layout_content.replace('{git_repo_root}', git_repo_root)
+    
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.kdl', delete=False) as temp_layout:
+        temp_layout.write(layout_content)
+        temp_layout_path = temp_layout.name
+    
+    try:
+        os.system(f"CHORUS_COMMAND='{agent_name}' zellij --layout {temp_layout_path}")
+    finally:
+        os.unlink(temp_layout_path)
 
 
 @main.command(name="config")
