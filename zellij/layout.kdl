@@ -1,5 +1,5 @@
 layout {
-    cwd "{git_repo_root}"
+    cwd "$CHORUS_GIT_ROOT"
     pane split_direction="vertical" {
         pane command="$CHORUS_COMMAND"
         pane split_direction="horizontal" {
