@@ -178,7 +178,7 @@ def connect(ctx):
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
     os.chdir(workspace_path)
-    os.system(f"CHORUS_COMMAND='{agent_name}' CHORUS_GIT_ROOT='{git_repo_root}' zellij --layout {layout_path}")
+    os.system(f"CHORUS_COMMAND='{agent_name}' CHORUS_GIT_ROOT='{git_repo_root}' zellij --session chorus --layout {layout_path}")
 
 
 @main.command(name="config")
