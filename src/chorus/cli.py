@@ -171,13 +171,14 @@ def connect(ctx):
         return
 
     workspace_path = os.path.join(repo_dir, workspace_name)
+    git_repo_root = os.path.join(workspace_path, repo_name)
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     layout_path = os.path.join(project_root, "zellij", "layout.kdl")
 
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
     os.chdir(workspace_path)
-    os.system(f"CHORUS_COMMAND='{agent_name}' zellij --layout {layout_path}")
+    os.system(f"CHORUS_COMMAND='{agent_name}' CHORUS_GIT_ROOT='{git_repo_root}' zellij --layout {layout_path}")
 
 
 @main.command(name="config")
