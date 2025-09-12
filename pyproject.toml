@@ -9,6 +9,7 @@ dependencies = [
     "pyyaml",
     "rich",
     "questionary",
+    "libtmux>=0.46.2",
 ]
 
 [build-system]

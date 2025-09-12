@@ -8,6 +8,7 @@ import yaml
 from rich.console import Console
 
 from .config import add_agent, get_chorus_directory, load_config
+from .tmux_manager import TmuxSessionManager
 
 
 @click.group()
@@ -172,13 +173,20 @@ def connect(ctx):
 
     workspace_path = os.path.join(repo_dir, workspace_name)
     git_repo_root = os.path.join(workspace_path, repo_name)
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    layout_path = os.path.join(project_root, "zellij", "layout.kdl")
 
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
-    os.chdir(workspace_path)
-    os.system(f"CHORUS_COMMAND='{agent_name}' CHORUS_GIT_ROOT='{git_repo_root}' zellij --session chorus --layout {layout_path}")
+    tmux_manager = TmuxSessionManager()
+    
+    try:
+        session = tmux_manager.create_session(git_repo_root, agent_name)
+        console.print(f"[green]Created tmux session '{tmux_manager.session_name}'[/green]")
+        console.print(f"[blue]To attach: tmux attach-session -t {tmux_manager.session_name}[/blue]")
+        
+        # Attach to the session
+        tmux_manager.attach_to_session()
+    except Exception as e:
+        console.print(f"[red]Error creating tmux session: {e}[/red]")
 
 
 @main.command(name="config")

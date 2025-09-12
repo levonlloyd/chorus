@@ -12,7 +12,7 @@ Chorus is a Python CLI tool that manages multiple copies of multiple repositorie
 - **CLI entry point**: Configured in `pyproject.toml` as `chorus = "chorus.cli:main"`
 - **Configuration**: Uses YAML config at `~/.config/chorus.yaml` with defaults in `cli.py:DEFAULT_CONFIG`
 - **Storage**: Manages repositories and workspaces in `~/.chorus/` directory by default
-- **Agent integration**: Works with Zellij terminal multiplexer using layout at `zellij/layout.kdl`
+- **Agent integration**: Works with tmux terminal multiplexer using libtmux
 
 ## Development Commands
 
@@ -38,8 +38,8 @@ This project uses `uv` for dependency management:
 - Configuration merges user config with `DEFAULT_CONFIG` in `cli.py:27`
 - Workspace creation clones repos into `~/.chorus/<repo_name>/<workspace_name>/`
 - Each repo directory contains a `chorus.yaml` with the git URL
-- Agent commands are passed to Zellij via `CHORUS_COMMAND` environment variable
-- The `connect` command uses Zellij layout from `zellij/layout.kdl:3` for multi-pane development
+- Agent commands are executed in tmux sessions via the TmuxSessionManager
+- The `connect` command creates a tmux session named 'chorus' with multiple panes for development
 
 ## Known Issues
 
