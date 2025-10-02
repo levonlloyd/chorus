@@ -161,6 +161,22 @@ def connect(ctx):
     if not workspace_name:
         return
 
+    workspace_path = os.path.join(repo_dir, workspace_name)
+    git_repo_root = os.path.join(workspace_path, repo_name)
+
+    # Determine tmux session name specific to this workspace
+    session_name = f"chorus-{repo_name}-{workspace_name}"
+
+    # If a session already exists for this workspace, attach immediately
+    tmux_manager = TmuxSessionManager(session_name=session_name)
+    if tmux_manager.session_exists():
+        console.print(
+            f"[green]Attaching to existing tmux session '{session_name}' for {repo_name}/{workspace_name}[/green]"
+        )
+        tmux_manager.attach_to_session()
+        return
+
+    # Otherwise, prompt for agent and create the session
     agents = config.get("agents", [])
     if not agents:
         console.print("[yellow]No agents configured. Please add an agent using 'chorus add-agent'.[/yellow]")
@@ -171,18 +187,13 @@ def connect(ctx):
     if not agent_name:
         return
 
-    workspace_path = os.path.join(repo_dir, workspace_name)
-    git_repo_root = os.path.join(workspace_path, repo_name)
-
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
-    tmux_manager = TmuxSessionManager()
-    
     try:
-        session = tmux_manager.create_session(git_repo_root, agent_name)
+        tmux_manager.create_session(git_repo_root, agent_name)
         console.print(f"[green]Created tmux session '{tmux_manager.session_name}'[/green]")
         console.print(f"[blue]To attach: tmux attach-session -t {tmux_manager.session_name}[/blue]")
-        
+
         # Attach to the session
         tmux_manager.attach_to_session()
     except Exception as e:
