@@ -1,6 +1,7 @@
 """CLI interface for Chorus."""
 
 import os
+import subprocess
 
 import click
 import questionary
@@ -9,6 +10,54 @@ from rich.console import Console
 
 from .config import add_agent, get_chorus_directory, load_config
 from .tmux_manager import TmuxSessionManager
+
+
+def run_setup_commands(workspace_path, repo_name, setup_commands):
+    """Run setup commands in the workspace directory."""
+    if not setup_commands:
+        return True
+
+    repo_path = os.path.join(workspace_path, repo_name)
+    console = Console()
+
+    console.print(f"[yellow]Running setup commands...[/yellow]")
+
+    for i, command in enumerate(setup_commands, 1):
+        console.print(f"[cyan]({i}/{len(setup_commands)}) {command}[/cyan]")
+
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                console.print(f"[red]Setup command failed: {command}[/red]")
+                console.print(f"[red]Error: {result.stderr}[/red]")
+                return False
+            else:
+                console.print(f"[green]✓ Command completed successfully[/green]")
+
+        except Exception as e:
+            console.print(f"[red]Error running command '{command}': {e}[/red]")
+            return False
+
+    # Create setup completion marker
+    setup_marker = os.path.join(workspace_path, ".chorus_setup_complete")
+    with open(setup_marker, "w") as f:
+        f.write("Setup completed successfully\n")
+
+    console.print(f"[green]All setup commands completed successfully![/green]")
+    return True
+
+
+def is_setup_complete(workspace_path):
+    """Check if setup has already been completed for this workspace."""
+    setup_marker = os.path.join(workspace_path, ".chorus_setup_complete")
+    return os.path.exists(setup_marker)
 
 
 @click.group()
@@ -119,6 +168,15 @@ def add_workspace(ctx, repo_name, workspace_name):
     click.echo(
         f"Workspace '{workspace_name}' created for repo '{repo_name}' and repo cloned successfully."
     )
+
+    # Run setup commands if they exist
+    setup_commands = repo_config.get("setup_commands", [])
+    if setup_commands:
+        success = run_setup_commands(workspace_dir, repo_name, setup_commands)
+        if not success:
+            click.echo(f"[red]Warning: Some setup commands failed. You may need to run them manually.[/red]")
+    else:
+        click.echo("No setup commands found in chorus.yaml.")
 
 
 @main.command()
