@@ -219,6 +219,22 @@ def connect(ctx):
     if not workspace_name:
         return
 
+    workspace_path = os.path.join(repo_dir, workspace_name)
+    git_repo_root = os.path.join(workspace_path, repo_name)
+
+    # Determine tmux session name specific to this workspace
+    session_name = f"chorus-{repo_name}-{workspace_name}"
+
+    # If a session already exists for this workspace, attach immediately
+    tmux_manager = TmuxSessionManager(session_name=session_name)
+    if tmux_manager.session_exists():
+        console.print(
+            f"[green]Attaching to existing tmux session '{session_name}' for {repo_name}/{workspace_name}[/green]"
+        )
+        tmux_manager.attach_to_session()
+        return
+
+    # Otherwise, prompt for agent and create the session
     agents = config.get("agents", [])
     if not agents:
         console.print("[yellow]No agents configured. Please add an agent using 'chorus add-agent'.[/yellow]")
@@ -229,34 +245,13 @@ def connect(ctx):
     if not agent_name:
         return
 
-    workspace_path = os.path.join(repo_dir, workspace_name)
-    git_repo_root = os.path.join(workspace_path, repo_name)
-
     console.print(f"Connecting to [cyan]{repo_name}/{workspace_name}[/cyan]...")
 
-    # Check if setup needs to be run
-    if not is_setup_complete(workspace_path):
-        console.print("[yellow]Setup not completed for this workspace. Running setup commands...[/yellow]")
-
-        # Load repo config to get setup commands
-        with open(os.path.join(repo_dir, "chorus.yaml"), "r") as f:
-            repo_config = yaml.safe_load(f)
-            setup_commands = repo_config.get("setup_commands", [])
-
-        if setup_commands:
-            success = run_setup_commands(workspace_path, repo_name, setup_commands)
-            if not success:
-                console.print("[red]Setup failed. Continuing anyway, but some features may not work.[/red]")
-        else:
-            console.print("[cyan]No setup commands configured in chorus.yaml[/cyan]")
-
-    tmux_manager = TmuxSessionManager()
-    
     try:
-        session = tmux_manager.create_session(git_repo_root, agent_name)
+        tmux_manager.create_session(git_repo_root, agent_name)
         console.print(f"[green]Created tmux session '{tmux_manager.session_name}'[/green]")
         console.print(f"[blue]To attach: tmux attach-session -t {tmux_manager.session_name}[/blue]")
-        
+
         # Attach to the session
         tmux_manager.attach_to_session()
     except Exception as e:
